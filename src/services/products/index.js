@@ -2,12 +2,23 @@ const express = require("express");
 const mongoose = require("mongoose");
 const ProductsSchema = require("./schema");
 const ProductsRouter = express.Router();
+const q2m = require("query-to-mongo");
+
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const multer = require("multer");
+const cloudinary = require("../../cloudinary");
 
 // Only products
 ProductsRouter.get("/", async (req, res, next) => {
   try {
-    const products = await ProductsSchema.find();
-    res.send(products);
+    const query = q2m(req.query);
+    const total = await ProductsSchema.countDocuments(query.criteria);
+    const products = await ProductsSchema.find(query.criteria)
+      .sort(query.options.sort)
+      .skip(query.options.skip)
+      .limit(query.options.limit);
+
+    res.send({ links: query.links("/products", total), products });
   } catch (error) {
     next(error);
   }
@@ -194,5 +205,30 @@ ProductsRouter.put("/:id/reviews/:reviewId", async (req, res, next) => {
     res.status(500).send("Something went wrong");
   }
 });
+
+//upload image route
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "striveTest",
+  },
+});
+
+const cloudinaryMulter = multer({ storage: storage });
+
+ProductsRouter.post(
+  "/image",
+  cloudinaryMulter.single("image"),
+  async (req, res, next) => {
+    try {
+      const path = req.file;
+      res.status(201).send({ path });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
 
 module.exports = ProductsRouter;

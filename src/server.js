@@ -5,6 +5,7 @@ const listEndpoints = require("express-list-endpoints");
 const mongoose = require("mongoose");
 
 const ProductsRouter = require("./services/products/index");
+const CartRouter = require("./services/cart/index");
 
 const {
   notFoundHandler,
@@ -23,6 +24,7 @@ server.use(express.json());
 server.use(cors());
 
 server.use("/products", ProductsRouter);
+server.use("/cart", CartRouter);
 // ERROR HANDLERS MIDDLEWARES
 
 server.use(badRequestHandler);
